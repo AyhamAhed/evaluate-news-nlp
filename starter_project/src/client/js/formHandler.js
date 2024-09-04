@@ -1,6 +1,10 @@
-import { checkForURL } from './js/urlChecker'; // New file for URL validation
+import { checkForName } from './nameChecker.js';
 
-// If working on Udacity workspace, update this with the Server API URL e.g. `https://wfkdhyvtzx.prod.udacity-student-workspaces.com/api`
+function isValidURL(url) {
+    const urlRegex = /^(https?:\/\/)?((([a-z\d]([a-z\d-]*[a-z\d])*)\.([a-z]{2,}|[a-z\d-]{2,}))|((\d{1,3}\.){3}\d{1,3}))(:\d+)?(\/[-a-z\d%_.~+]*)*(\?[;&a-z\d%_.~+=-]*)?(#[-a-z\d_]*)?$/i;
+    return urlRegex.test(url);
+}
+
 const serverURL = 'https://localhost:8000/api';
 
 const form = document.getElementById('urlForm');
@@ -13,46 +17,29 @@ function handleSubmit(event) {
     const formText = document.getElementById('name').value;
 
     // Check if the URL is valid
-    if (checkForURL(formText)) {
-        // If the URL is valid, send it to the server
-        sendDataToServer(formText);
-    } else {
-        alert("Invalid URL. Please enter a valid URL.");
-    }
-}
-
-// Function to check if the URL is valid
-function checkForURL(url) {
-    try {
-        new URL(url); // Attempt to create a new URL object
-        return true; // URL is valid
-    } catch (e) {
-        return false; // URL is invalid
-    }
-}
-
-// Function to send data to the server
-async function sendDataToServer(url) {
-    try {
-        const response = await fetch(`${serverURL}/addUrl`, {
+    if (isValidURL(formText)) {
+        // Send the URL to the server
+        fetch(serverURL, {
             method: 'POST',
+            credentials: 'same-origin',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ url })
-        });
-
-        if (!response.ok) {
-            throw new Error('Network response was not ok.');
-        }
-
-        const data = await response.json();
-        console.log('Data received from server:', data);
-        // Handle the data received from the server, e.g., update the UI
-    } catch (error) {
-        console.error('Error sending data to server:', error);
+            body: JSON.stringify({ url: formText }),
+        })
+            .then(response => response.json())
+            .then(data => updateUI(data))
+            .catch(error => console.error('Error:', error));
+    } else {
+        alert("Please enter a valid URL.");
     }
 }
 
-// Export the handleSubmit function
+// Function to update the UI with the API response
+function updateUI(data) {
+    document.getElementById('score_tag').innerText = data.score_tag;
+    document.getElementById('irony').innerText = data.irony;
+    document.getElementById('agreement').innerText = data.agreement;
+}
+
 export { handleSubmit };
